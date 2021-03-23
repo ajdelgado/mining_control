@@ -45,3 +45,4 @@ Options:
 
 ## Credits
 To the contributors of [NiceHash's rest-clients-demos](https://github.com/nicehash/rest-clients-demo/graphs/contributors) for the API class.
+And to [Iisakki Uusimäki](https://www.linkedin.com/in/iisakkiuusimaki/) for the information about Sahko.
