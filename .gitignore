@@ -138,5 +138,5 @@ dmypy.json
 cython_debug/
 
 # Configuration files
-.conf
-.cfg
+*.conf
+*.cfg
