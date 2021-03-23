@@ -70,6 +70,7 @@ class mining_control:
         return True
 
     def get_energy_prices(self):
+        ''' Get current energy price from Sahko (Finnish electricity grid) '''
         url="https://sahko.tk/api.php"
         self.session=requests.Session()
         result = self.session.post(url, data={'mode':'get_prices'})
@@ -85,6 +86,7 @@ class mining_control:
             self.action = 'START'
     
     def get_rig_statuses(self):
+        ''' Get status of the rig (maybe add all rigs in the future) and if price is over the limit stop mining'''
         if self.debug_level.lower() == 'debug':
             verbose = True
         else:
@@ -104,6 +106,7 @@ class mining_control:
 
 
 class nicehash_private_api:
+    ''' From https://github.com/nicehash/rest-clients-demo/blob/master/python/nicehash.py with some added endpoints '''
 
     def __init__(self, host, organisation_id, key, secret, verbose=False):
         self.key = key
