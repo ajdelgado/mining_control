@@ -1,9 +1,9 @@
+# Case insensitive. From the python.logging debug levels https://docs.python.org/3.8/howto/logging.html#logging-levels
+debug_level='DEBUG'
+# Float number in cents of Euro
+price_limit=6
 # Information from your NiceHash account. Don't forget to protect this file by removing all permissions to other accounts!
 organization_id="0113e18a-a225-420e-819c-7a67d242b233"
 api_key="f9aa8d7a-c416-4ec3-9d54-b799ce8686ca"
 api_secret="989b7700-2d13-48be-a950-966940c2669987e23f14-5fa8-47bd-8157-4c5d11ac46a9"
 rig_id="0-ee04c6aefa45"
-# Case insensitive. From the python.logging debug levels https://docs.python.org/3.8/howto/logging.html#logging-levels
-debug_level='DEBUG'
-# Float number in cents of Euro
-price_limit=6
