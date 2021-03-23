@@ -93,7 +93,6 @@ class mining_control:
             verbose = False
         nh = nicehash_private_api(host='https://api2.nicehash.com', organisation_id=self.organization_id, key=self.api_key, secret=self.api_secret, verbose=verbose)
         rig_statuses = nh.get_rig_status(self.rig_id)
-        print(json.dumps(rig_statuses, indent=2))
         for rig in rig_statuses['miningRigs']:
             print(f"Rig '{rig['rigId']}' status is '{rig['minerStatus']}'")
             if rig['minerStatus'] != self.desire_state:
@@ -103,6 +102,8 @@ class mining_control:
                     self._log.info(f"Switched successfully. {result}")
                 else:
                     self._log.error(f"There was an error switching the mining state. {result}")
+            else:
+                self._log.info('And this is the status it should be with the current prices.')
 
 
 class nicehash_private_api:
