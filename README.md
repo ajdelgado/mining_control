@@ -42,3 +42,6 @@ Options:
   --config FILE                   Read configuration from FILE.
   --help                          Show this message and exit.
 ```
+
+## Credits
+To the contributors of [NiceHash's rest-clients-demos](https://github.com/nicehash/rest-clients-demo/graphs/contributors) for the API class.
