@@ -92,9 +92,16 @@ class mining_control:
         else:
             verbose = False
         nh = nicehash_private_api(host='https://api2.nicehash.com', organisation_id=self.organization_id, key=self.api_key, secret=self.api_secret, verbose=verbose)
+        btceur_price=nh.get_info_prices()['BTCEURS']
         rig_statuses = nh.get_rig_status(self.rig_id)
         for rig in rig_statuses['miningRigs']:
-            print(f"Rig '{rig['rigId']}' status is '{rig['minerStatus']}'")
+            if 'stats' in rig:
+                profitability_centseur = (float(btceur_price) * float(rig['profitability']))*100/24
+                self._log.info(f"Rig profitability 1h: {rig['profitability']/24} ({profitability_centseur} ¢ of €)")
+                if profitability_centseur < float(self.energy_prices['now']):
+                    self._log.info('Attention! Profitability is less than price of energy')
+            self._log.info(f"Rig '{rig['rigId']}' status is '{rig['minerStatus']}'")
+            #print(json.dumps(rig, indent=2))
             if rig['minerStatus'] != self.desire_state:
                 self._log.info(f"Switching state of the rig '{self.rig_id}' with the action '{self.action}'.")
                 result=nh.set_rig_status(self.rig_id, self.action)
@@ -330,6 +337,19 @@ class nicehash_private_api:
 
     def get_rig_status(self, rig_id):
         return self.request('GET', '/main/api/v2/mining/rigs2', '', None)
+    
+    def get_buy_info(self):
+        return self.request('GET', '/main/api/v2/public/buy/info', '', None)
+
+    def get_info_prices(self):
+        return self.request('GET', '/exchange/api/v2/info/prices', '', None)
+
+    def get_active_workers(self):
+        ''' This return paginated results but not implemeted yet '''
+        return self.request('GET', '/main/api/v2/mining/rigs/activeWorkers', '', None)
+
+    def get_miner_stats(self, rig_id, algorithm):
+        return self.request('GET', '/main/api/v2/mining/rig/stats/algo', f"rigId={rig_id}&algorithm={algorithm}", None)
 
 
 
@@ -340,11 +360,11 @@ class nicehash_private_api:
         case_sensitive=False,
     ), help='Set the debug level for the standard output.')
 @click.option('--log-file', '-l', help="File to store all debug messages.")
-@click.option('--price-limit', '-p', default=6, help="Price limit of electricity before stopping rig from mining.")
-@click.option('--api-key', '-k', help='Your NiceHash API key.')
-@click.option('--api-secret', '-s', help='You NiceHash API secret. Preferebly use a configuration file for this option.')
-@click.option('--organization-id', '-o', help='Your NiceHash organization ID.')
-@click.option('--rig-id', '-i', help='Your NiceHash Righ ID.')
+@click.option('--price-limit', '-p', required=True, default=6, help="Price limit of electricity before stopping rig from mining.")
+@click.option('--api-key', '-k', required=True, help='Your NiceHash API key.')
+@click.option('--api-secret', '-s', required=True, help='You NiceHash API secret. Preferebly use a configuration file for this option.')
+@click.option('--organization-id', '-o', required=True, help='Your NiceHash organization ID.')
+@click.option('--rig-id', '-i', required=True, help='Your NiceHash Righ ID.')
 #@click.option("--dummy","-n" is_flag=True, help="Don't do anything, just show what would be done.") # Don't forget to add dummy to parameters of main function
 @click_config_file.configuration_option()
 def __main__(debug_level, log_file, price_limit, api_key, api_secret, organization_id, rig_id):
