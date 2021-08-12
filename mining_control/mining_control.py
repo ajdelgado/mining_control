@@ -126,7 +126,7 @@ class mining_control:
                     self._log.debug('Profitability higher than price of electricity')
             else:
                 self._log.debug('There are no stats yet of profitability.')
-            self._log.info(f"Rig '{rig['rigId']}' status is '{rig['minerStatus']}'")
+            self._log.info(f"Rig '{rig['name']}' (id: {rig['rigId']}) status is '{rig['minerStatus']}'")
             if rig['minerStatus'] != self.desire_state:
                 self._log.info(f"Switching state of the rig '{self.rig_id}' with the action '{self.action}'.")
                 result=nh.set_rig_status(self.rig_id, self.action)
@@ -375,7 +375,6 @@ class nicehash_private_api:
 
     def get_miner_stats(self, rig_id, algorithm):
         return self.request('GET', '/main/api/v2/mining/rig/stats/algo', f"rigId={rig_id}&algorithm={algorithm}", None)
-
 
 
 @click.command()
