@@ -2,7 +2,7 @@ import setuptools
 setuptools.setup(
     scripts=['mining_control/mining_control.py'],
     author="Antonio J. Delgado",
-    version='0.0.1',
+    version='0.0.2',
     name='mining_control',
     author_email="",
     url="",

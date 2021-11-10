@@ -86,9 +86,11 @@ class mining_control:
             self.action = 'START'
 
     def get_device_power_consumption(self, device_name):
-        ''' Based on Tom's hardware https://www.tomshardware.com/reviews/amd-ryzen-7-2700x-review,5571-12.html '''
+        ''' Based on Tom's hardware https://www.tomshardware.com/reviews/amd-ryzen-7-2700x-review,5571-12.html 104.7
+        And adjusted to real usage by Nicehash 120
+        '''
         if 'AMD Ryzen 7 2700X' in device_name:
-            return 104.7
+            return 120
         else:
             return -1
     
