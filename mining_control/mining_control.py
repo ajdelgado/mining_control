@@ -84,6 +84,15 @@ class mining_control:
             self._log.info(f"Current energy price ({self.energy_prices['now']} ¢/kWh) does not exceed our limit of {self.price_limit}, setting desire state of the mining START.")
             self.desire_state = 'MINING'
             self.action = 'START'
+
+    def get_device_power_consumption(self, device_name):
+        ''' Based on Tom's hardware https://www.tomshardware.com/reviews/amd-ryzen-7-2700x-review,5571-12.html 104.7
+        And adjusted to real usage by Nicehash 120
+        '''
+        if 'AMD Ryzen 7 2700X' in device_name:
+            return 120
+        else:
+            return -1
     
     def get_rig_statuses(self):
         ''' Get status of the rig (maybe add all rigs in the future) and if price is over the limit stop mining'''
@@ -92,9 +101,34 @@ class mining_control:
         else:
             verbose = False
         nh = nicehash_private_api(host='https://api2.nicehash.com', organisation_id=self.organization_id, key=self.api_key, secret=self.api_secret, verbose=verbose)
+        btceur_price=nh.get_info_prices()['BTCEURS']
         rig_statuses = nh.get_rig_status(self.rig_id)
         for rig in rig_statuses['miningRigs']:
-            print(f"Rig '{rig['rigId']}' status is '{rig['minerStatus']}'")
+            total_consumption = 0
+            for device in rig['devices']:
+                power_usage = device.get('powerUsage', -1)
+                if power_usage == -1:
+                    power_usage = self.get_device_power_consumption(device['name'])
+                    if power_usage == -1:
+                        self._log.debug(f"Power usage in device {device['name']} is unknown.")
+                    else:
+                        self._log.debug(f"Power usage (estimated) in device {device['name']}: {power_usage}")
+                        total_consumption += power_usage
+                else:
+                    self._log.debug(f"Power usage in device {device['name']}: {device.get('powerUsage', '?')}")
+                    total_consumption += power_usage
+            if total_consumption == 0:
+                total_consumption = 1
+            if 'stats' in rig:
+                profitability_centseur = (float(btceur_price) * float(rig['profitability']))*100/24
+                self._log.info(f"Rig profitability 1h: {rig['profitability']/24} BTC ({profitability_centseur} ¢ of €)")
+                if (profitability_centseur*total_consumption) < (float(self.energy_prices['now'])/1000):
+                    self._log.info('Attention! Profitability is less than price of energy (but check power consumption)')
+                else:
+                    self._log.debug('Profitability higher than price of electricity')
+            else:
+                self._log.debug('There are no stats yet of profitability.')
+            self._log.info(f"Rig '{rig['name']}' (id: {rig['rigId']}) status is '{rig['minerStatus']}'")
             if rig['minerStatus'] != self.desire_state:
                 self._log.info(f"Switching state of the rig '{self.rig_id}' with the action '{self.action}'.")
                 result=nh.set_rig_status(self.rig_id, self.action)
@@ -330,7 +364,19 @@ class nicehash_private_api:
 
     def get_rig_status(self, rig_id):
         return self.request('GET', '/main/api/v2/mining/rigs2', '', None)
+    
+    def get_buy_info(self):
+        return self.request('GET', '/main/api/v2/public/buy/info', '', None)
 
+    def get_info_prices(self):
+        return self.request('GET', '/exchange/api/v2/info/prices', '', None)
+
+    def get_active_workers(self):
+        ''' This return paginated results but not implemeted yet '''
+        return self.request('GET', '/main/api/v2/mining/rigs/activeWorkers', '', None)
+
+    def get_miner_stats(self, rig_id, algorithm):
+        return self.request('GET', '/main/api/v2/mining/rig/stats/algo', f"rigId={rig_id}&algorithm={algorithm}", None)
 
 
 @click.command()
@@ -340,11 +386,11 @@ class nicehash_private_api:
         case_sensitive=False,
     ), help='Set the debug level for the standard output.')
 @click.option('--log-file', '-l', help="File to store all debug messages.")
-@click.option('--price-limit', '-p', default=6, help="Price limit of electricity before stopping rig from mining.")
-@click.option('--api-key', '-k', help='Your NiceHash API key.')
-@click.option('--api-secret', '-s', help='You NiceHash API secret. Preferebly use a configuration file for this option.')
-@click.option('--organization-id', '-o', help='Your NiceHash organization ID.')
-@click.option('--rig-id', '-i', help='Your NiceHash Righ ID.')
+@click.option('--price-limit', '-p', required=True, default=6, help="Price limit of electricity before stopping rig from mining.")
+@click.option('--api-key', '-k', required=True, help='Your NiceHash API key.')
+@click.option('--api-secret', '-s', required=True, help='You NiceHash API secret. Preferebly use a configuration file for this option.')
+@click.option('--organization-id', '-o', required=True, help='Your NiceHash organization ID.')
+@click.option('--rig-id', '-i', required=True, help='Your NiceHash Righ ID.')
 #@click.option("--dummy","-n" is_flag=True, help="Don't do anything, just show what would be done.") # Don't forget to add dummy to parameters of main function
 @click_config_file.configuration_option()
 def __main__(debug_level, log_file, price_limit, api_key, api_secret, organization_id, rig_id):
